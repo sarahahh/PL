@@ -2,16 +2,13 @@ import streamlit as st
 import pandas as pd
 import numpy as np
 
-def build_tableau_dataframe(tableau, basic_variables, num_variables, num_constraints):
-    column_names = []
+def build_tableau_dataframe(
+    tableau,
+    basic_variables,
+    variable_names
+):
 
-    for i in range(num_variables):
-        column_names.append(f"X{i + 1}")
-
-    for i in range(num_constraints):
-        column_names.append(f"S{i + 1}")
-
-    column_names.append("RHS")
+    column_names = variable_names + ["RHS"]
 
     tableau_df = pd.DataFrame(
         tableau,
@@ -19,6 +16,7 @@ def build_tableau_dataframe(tableau, basic_variables, num_variables, num_constra
     )
 
     row_names = basic_variables + ["Z"]
+
     tableau_df.index = row_names
 
     return tableau_df.round(4)
@@ -43,7 +41,7 @@ def show_simplex_iterations(result, problem_data, num_variables):
         })
 
     solution_df = pd.DataFrame(solution_data)
-    st.dataframe(solution_df, use_container_width=True)
+    st.dataframe(solution_df, width="stretch")
 
     st.success(f"Valor óptimo: Z = {result['optimal_value']:.4f}")
 
@@ -66,7 +64,7 @@ def show_simplex_iterations(result, problem_data, num_variables):
 
     if slack_data:
         slack_df = pd.DataFrame(slack_data)
-        st.dataframe(slack_df, use_container_width=True)
+        st.dataframe(slack_df, width="stretch")
     else:
         st.info("No hay variables de holgura positivas en la base final.")
 
@@ -104,7 +102,7 @@ def show_simplex_iterations(result, problem_data, num_variables):
             for i, ratio in enumerate(step["ratios"]):
 
                 if np.isinf(ratio):
-                    ratio_value = "-"
+                    ratio_value = None
                 else:
                     ratio_value = round(ratio, 4)
 
@@ -116,18 +114,17 @@ def show_simplex_iterations(result, problem_data, num_variables):
             st.write("##### Prueba de razón mínima")
             st.dataframe(
                 pd.DataFrame(ratio_data),
-                use_container_width=True
+                width="stretch"
             )
 
         tableau_df = build_tableau_dataframe(
             tableau=step["tableau"],
             basic_variables=step["basic_variables"],
-            num_variables=num_variables,
-            num_constraints=num_constraints
+            variable_names=result["variable_names"]
         )
 
         st.write("##### Tablero simplex")
-        st.dataframe(tableau_df, use_container_width=True)
+        st.dataframe(tableau_df, width="stretch")
 
     # =========================
     # TABLERO SIMPLEX FINAL
@@ -138,11 +135,10 @@ def show_simplex_iterations(result, problem_data, num_variables):
     final_tableau_df = build_tableau_dataframe(
         tableau=result["tableau"],
         basic_variables=result["basic_variables"],
-        num_variables=num_variables,
-        num_constraints=num_constraints
+        variable_names=result["variable_names"]
     )
 
-    st.dataframe(final_tableau_df, use_container_width=True)
+    st.dataframe(final_tableau_df, width="stretch")
 
     st.info(
         "En el tablero simplex final, las filas indican las variables básicas. "

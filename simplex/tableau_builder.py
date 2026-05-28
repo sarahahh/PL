@@ -127,8 +127,11 @@ def build_initial_tableau(problem_data):
             coefficient = objective[i]
 
             if problem_type.lower() == "maximizar":
+
                 z_row.append(-coefficient)
+
             else:
+
                 z_row.append(coefficient)
 
         elif variable.startswith("A"):
@@ -148,6 +151,27 @@ def build_initial_tableau(problem_data):
 
     tableau = np.array(tableau_rows, dtype=float)
 
+    # ====================================
+    # AJUSTE DE GRAN M
+    # ====================================
+
+    if len(artificial_variables) > 0:
+
+        for row_index in range(len(constraints)):
+
+            for col_index, variable in enumerate(variable_names):
+
+                if variable in artificial_variables:
+
+                    if tableau[row_index, col_index] == 1:
+
+                        if problem_type.lower() == "maximizar":
+
+                            tableau[-1] -= BIG_M * tableau[row_index]
+
+                        else:
+
+                            tableau[-1] += BIG_M * tableau[row_index]
     return {
         "tableau": tableau,
         "variable_names": variable_names,

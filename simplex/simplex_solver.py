@@ -1,5 +1,3 @@
-# IMPORTACIÓN DE LIBRERÍAS
-
 import numpy as np
 
 # Implementa el método simplex para resolver
@@ -7,61 +5,55 @@ import numpy as np
 
 class SimplexSolver:
 
-    def __init__(self, objective, constraints):
-
-        self.objective = objective
-        self.constraints = constraints
-        self.num_variables = len(objective)
-        self.num_constraints = len(constraints)
-
-        # Al iniciar el simplex, si las restricciones son <=,
-        # las variables básicas iniciales son las holguras S1, S2, S3...
-        self.basic_variables = [
-            f"S{i + 1}" for i in range(self.num_constraints)
-        ]
-
-        self.tableau = None
-
-# Construye el tableau simplex inicial. 
-
-    def create_tableau(self):
-
-        rows = self.num_constraints + 1
-        cols = self.num_variables + self.num_constraints + 1
-
-        tableau = np.zeros((rows, cols))
-
-        # Restricciones
-        for i, constraint in enumerate(self.constraints):
-
-            coeffs = constraint["coefficients"]
-            rhs = constraint["rhs"]
-
-            tableau[i, :self.num_variables] = coeffs
-
-            # Variable de holgura
-            tableau[i, self.num_variables + i] = 1
-
-            # Lado derecho
-            tableau[i, -1] = rhs
-
-        # Función objetivo
-        # Para maximización se colocan negativos los coeficientes
-        tableau[-1, :self.num_variables] = -np.array(self.objective)
+    def __init__(
+        self,
+        tableau,
+        variable_names,
+        problem_type="maximizar"
+    ):
 
         self.tableau = tableau
+        self.variable_names = variable_names
+        self.problem_type = problem_type.lower()
 
+        self.num_constraints = tableau.shape[0] - 1
+
+        self.num_variables = len(
+            [v for v in variable_names if v.startswith("X")]
+        )
+
+        self.basic_variables = []
+
+        num_rows = self.num_constraints
+
+        for row in range(num_rows):
+
+            basic_var = "?"
+
+            for col in range(self.tableau.shape[1] - 1):
+
+                column = self.tableau[:num_rows, col]
+
+                ones = np.isclose(column, 1)
+                zeros = np.isclose(column, 0)
+
+                if (
+                    np.sum(ones) == 1
+                    and np.sum(zeros) == num_rows - 1
+                    and ones[row]
+                ):
+
+                    basic_var = self.variable_names[col]
+                    break
+
+            self.basic_variables.append(basic_var)
+
+    
 # Devuelve el nombre asociado a una columna del tableau simplex.
 
     def get_variable_name(self, column_index):
 
-        # Si la columna pertenece a las variables originales
-        if column_index < self.num_variables:
-            return f"X{column_index + 1}"
-
-        # Si la columna pertenece a variables de holgura
-        slack_index = column_index - self.num_variables
-        return f"S{slack_index + 1}"
+        return self.variable_names[column_index]
 
 # Verifica si la solución actual es óptima.
 
@@ -69,9 +61,13 @@ class SimplexSolver:
 
         last_row = self.tableau[-1, :-1]
 
-        # En maximización, cuando ya no hay negativos en la fila Z,
-        # la solución actual es óptima
-        return np.all(last_row >= 0)
+        if self.problem_type == "maximizar":
+
+            return np.all(last_row >= 0)
+
+        else:
+
+            return np.all(last_row <= 0)
 
 # Selecciona la variable entrante.
 
@@ -79,8 +75,14 @@ class SimplexSolver:
 
         last_row = self.tableau[-1, :-1]
 
-        # Entra la variable con el coeficiente más negativo
-        return int(np.argmin(last_row))
+        if self.problem_type == "maximizar":
+
+            return int(np.argmin(last_row))
+
+        else:
+
+            return int(np.argmax(last_row))
+    
 
 # Selecciona la variable saliente usando la prueba de razón mínima.
 
@@ -99,7 +101,11 @@ class SimplexSolver:
 
             ratios.append(ratio)
 
-        # Sale la variable con la menor razón positiva
+        if all(np.isinf(r) for r in ratios):
+            raise Exception(
+                "El problema es no acotado."
+            )
+
         return int(np.argmin(ratios))
 
 # Calcula todas las razones mínimas utilizadas durante el método simplex.
@@ -147,8 +153,6 @@ class SimplexSolver:
 # Ejecuta el algoritmo simplex completo.
 
     def solve(self):
-
-        self.create_tableau()
 
         iterations = []
 
@@ -204,24 +208,30 @@ class SimplexSolver:
                 )
             })
 
-        solution = np.zeros(self.num_variables)
+        real_variables = [
+            v for v in self.variable_names
+            if v.startswith("X")
+        ]
+        solution = np.zeros(len(real_variables))
 
-        # Extraemos la solución final usando las variables básicas finales
         for row_index, variable_name in enumerate(self.basic_variables):
 
             if variable_name.startswith("X"):
 
                 variable_index = int(variable_name[1:]) - 1
 
-                if variable_index < self.num_variables:
-                    solution[variable_index] = self.tableau[row_index, -1]
+                solution[variable_index] = self.tableau[row_index, -1]
 
         optimal_value = self.tableau[-1, -1]
+
+        if optimal_value < 0:   
+            optimal_value *= -1
 
         return {
             "solution": solution,
             "optimal_value": optimal_value,
             "tableau": self.tableau,
             "iterations": iterations,
-            "basic_variables": self.basic_variables
+            "basic_variables": self.basic_variables,
+            "variable_names": self.variable_names
         }
