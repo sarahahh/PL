@@ -2,6 +2,11 @@ import streamlit as st
 import pandas as pd
 import numpy as np
 
+
+# ============================================================
+# CONSTRUYE UN DATAFRAME LEGIBLE DEL TABULADO SIMPLEX
+# ============================================================
+
 def build_tableau_dataframe(
     tableau,
     basic_variables,
@@ -21,7 +26,12 @@ def build_tableau_dataframe(
 
     return tableau_df.round(4)
 
+# ============================================================
+# MUESTRA TODAS LAS ITERACIONES DEL MÉTODO SIMPLEX
+# ============================================================
+
 def show_simplex_iterations(result, problem_data, num_variables):
+    
     num_constraints = len(problem_data["constraints"])
 
     st.subheader("Solución numérica paso a paso - Método Simplex")

@@ -3,12 +3,19 @@ import numpy as np
 
 BIG_M = 1000000
 
+# =========================================================
+# FUNCIÓN PRINCIPAL
+# =========================================================
 
 def build_initial_tableau(problem_data):
+
+    # Extraer datos del problema
 
     constraints = problem_data["constraints"]
     objective = problem_data["objective"]
     problem_type = problem_data["type"]
+
+    # Contar variables originales
 
     num_original_variables = len(objective)
 
@@ -16,6 +23,7 @@ def build_initial_tableau(problem_data):
     variable_names = []
 
     # Variables originales
+
     for i in range(num_original_variables):
         variable_names.append(f"X{i + 1}")
 
@@ -31,9 +39,12 @@ def build_initial_tableau(problem_data):
 
     for row_index, constraint in enumerate(constraints):
 
+        # Copiar coeficientes de la restricción
+
         row = list(constraint["coefficients"])
 
         # Expandir filas anteriores
+
         current_size = len(variable_names)
 
         while len(row) < current_size:
@@ -62,7 +73,10 @@ def build_initial_tableau(problem_data):
 
         elif operator == ">=":
 
-            # Variable de exceso
+            # =============================================
+            # VARIABLE DE EXCESO
+            # =============================================
+
             excess_count += 1
 
             variable_names.append(f"E{excess_count}")
@@ -72,7 +86,10 @@ def build_initial_tableau(problem_data):
 
             row.append(-1)
 
-            # Variable artificial
+            # =============================================
+            # VARIABLE ARTIFICIAL
+            # =============================================
+
             artificial_count += 1
 
             artificial_name = f"A{artificial_count}"
@@ -106,10 +123,12 @@ def build_initial_tableau(problem_data):
             row.append(1)
 
         # Completar longitud
+
         while len(row) < len(variable_names):
             row.append(0)
 
-        # RHS
+        # Agregar lado derecho de la restricción
+
         row.append(constraint["rhs"])
 
         tableau_rows.append(row)
@@ -121,6 +140,10 @@ def build_initial_tableau(problem_data):
     z_row = []
 
     for i, variable in enumerate(variable_names):
+
+        # =================================================
+        # VARIABLES ORIGINALES
+        # =================================================
 
         if variable.startswith("X"):
 
@@ -134,6 +157,10 @@ def build_initial_tableau(problem_data):
 
                 z_row.append(coefficient)
 
+        # =================================================
+        # VARIABLES ARTIFICIALES
+        # =================================================
+
         elif variable.startswith("A"):
 
             # Penalización Big M
@@ -141,6 +168,10 @@ def build_initial_tableau(problem_data):
                 z_row.append(-BIG_M)
             else:
                 z_row.append(BIG_M)
+
+        # =================================================
+        # VARIABLES HOLGURA / EXCESO
+        # =================================================
 
         else:
             z_row.append(0)
@@ -172,6 +203,11 @@ def build_initial_tableau(problem_data):
                         else:
 
                             tableau[-1] += BIG_M * tableau[row_index]
+    
+    # =====================================================
+    # RETORNAR RESULTADOS
+    # =====================================================
+    
     return {
         "tableau": tableau,
         "variable_names": variable_names,

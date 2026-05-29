@@ -3,9 +3,14 @@ import pandas as pd
 import matplotlib.pyplot as plt
 
 
-#crear función para verificar si un punto es factible
+# =========================================================
+# VERIFICAR SI UN PUNTO ES FACTIBLE
+# =========================================================
+
 def is_feasible_point(point, constraints, tolerance=1e-6):
     x1, x2 = point
+
+    # Restricción de no negatividad
 
     if x1 < -tolerance or x2 < -tolerance:
         return False
@@ -28,7 +33,10 @@ def is_feasible_point(point, constraints, tolerance=1e-6):
 
     return True
 
-#crear función para encontrar intersecciones
+# =========================================================
+# ENCONTRAR INTERSECCIONES
+# =========================================================
+
 def find_intersections(constraints):
     lines = []
 
@@ -63,7 +71,10 @@ def find_intersections(constraints):
 
     return points
 
-#filtrar solo los vértices factibles
+# =========================================================
+# FILTRAR VÉRTICES FACTIBLES
+# =========================================================
+
 def get_feasible_vertices(constraints):
     candidate_points = find_intersections(constraints)
     feasible_points = []
@@ -80,12 +91,18 @@ def get_feasible_vertices(constraints):
 
     return feasible_points
 
-#evaluar la función objetivo
+# =========================================================
+# EVALUAR FUNCIÓN OBJETIVO
+# =========================================================
+
 def evaluate_objective(point, objective):
     x1, x2 = point
     return objective[0] * x1 + objective[1] * x2
 
-#escoger el mejor vértice
+# =========================================================
+# ENCONTRAR VÉRTICE ÓPTIMO
+# =========================================================
+
 def find_optimal_vertex(vertices, objective, problem_type):
     if not vertices:
         return None, None
@@ -96,14 +113,26 @@ def find_optimal_vertex(vertices, objective, problem_type):
         z_value = evaluate_objective(point, objective)
         values.append(z_value)
 
+    # =====================================================
+    # MAXIMIZACIÓN
+    # =====================================================
+
     if problem_type == "Maximizar":
         best_index = int(np.argmax(values))
+
+    # =====================================================
+    # MINIMIZACIÓN
+    # =====================================================
+    
     else:
         best_index = int(np.argmin(values))
 
     return vertices[best_index], values[best_index]
 
-#ordenar vértices para sombrear región factible
+# =========================================================
+# ORDENAR VÉRTICES
+# =========================================================
+
 def order_vertices(vertices):
     center_x = sum(point[0] for point in vertices) / len(vertices)
     center_y = sum(point[1] for point in vertices) / len(vertices)
@@ -113,7 +142,10 @@ def order_vertices(vertices):
 
     return sorted(vertices, key=angle_from_center)
 
-#función para graficar
+# =========================================================
+# GRAFICAR SOLUCIÓN
+# =========================================================
+
 def plot_graphical_solution(
     objective,
     constraints,
@@ -191,7 +223,10 @@ def plot_graphical_solution(
 
     return fig
 
-#funcion principal 
+# =========================================================
+# FUNCIÓN PRINCIPAL
+# =========================================================
+
 def solve_graphical_method(objective, constraints, problem_type):
     vertices = get_feasible_vertices(constraints)
 
@@ -228,6 +263,10 @@ def solve_graphical_method(objective, constraints, problem_type):
         optimal_value,
         problem_type
     )
+
+    # =====================================================
+    # RETORNAR RESULTADOS
+    # =====================================================
 
     return {
         "vertices": vertices,
